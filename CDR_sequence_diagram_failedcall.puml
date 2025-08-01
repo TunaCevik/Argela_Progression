@@ -1,0 +1,49 @@
+@startuml FailedPhoneCallProcessing
+autonumber
+actor "Harici Sistem" as ExternalSystem
+participant "CDR Controller" as Controller
+participant "CDR Service" as Service
+participant "PhoneCall" as PhoneCallObject
+' Not: Başarısız çağrıda tarife planı ile doğrudan etkileşime girmeyeceğiz, bu yüzden onu buraya eklemiyoruz
+participant "CDR Repository" as Repository
+database "Database" as DB
+
+ExternalSystem -> Controller : HTTP POST /api/v1/cdr/phonecalls \n (JSON Başarısız Telefon Çağrısı Verisi)
+activate Controller
+
+Controller -> Service : processPhoneCall(jsonData)
+activate Service
+
+    Service -> PhoneCallObject : <<create>> PhoneCall(commonData, phoneCallSpecificData, result="FAIL")
+    activate PhoneCallObject
+    deactivate PhoneCallObject
+
+    ' Alt: Başarısız çağrılar için maliyet hesaplama atlanır veya sıfır olarak belirlenir.
+    alt result == "FAIL"
+        PhoneCallObject -> PhoneCallObject : setCost(0.0)
+    else result == "SUCCESS" (Normal Akış)
+        ' Bu kısım önceki başarılı senaryodaki gibi devam ederdi
+        ' Service -> VoiceRate : getRate()
+        ' VoiceRate --> Service : voiceRatePerSecond
+        ' Service -> PhoneCallObject : calculateCost(voiceRatePerSecond)
+        ' PhoneCallObject --> Service : calculatedCost
+    end
+
+    Service -> Repository : save(phoneCallObject)
+    activate Repository
+
+        Repository -> DB : INSERT INTO phone_calls \n (mapped_phone_call_data)
+        activate DB
+        DB --> Repository : kaydetme başarılı
+        deactivate DB
+
+    Repository --> Service : kayıt başarılı
+    deactivate Repository
+
+Service --> Controller : İşlem Başarılı (200 OK)
+deactivate Service
+
+Controller --> ExternalSystem : HTTP 200 OK
+deactivate Controller
+
+@enduml

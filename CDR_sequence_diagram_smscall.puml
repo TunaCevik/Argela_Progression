@@ -1,0 +1,48 @@
+@startuml SMSCallProcessing
+autonumber
+actor "Harici Sistem" as ExternalSystem
+participant "CDR Controller" as Controller
+participant "CDR Service" as Service
+participant "SmsCall" as SmsCallObject
+participant "SMSCallRatePlan" as SmsRate
+participant "CDR Repository" as Repository
+database "Database" as DB
+
+ExternalSystem -> Controller : HTTP POST /api/v1/cdr/smscalls \n (JSON SMS Çağrısı Verisi)
+activate Controller
+
+Controller -> Service : processSmsCall(jsonData)
+activate Service
+
+    Service -> SmsCallObject : <<create>> SmsCall(commonData, smsCallSpecificData)
+    activate SmsCallObject
+    deactivate SmsCallObject
+
+    Service -> SmsRate : getRate()
+    activate SmsRate
+    SmsRate --> Service : smsRatePerSegment
+    deactivate SmsRate
+
+    Service -> SmsCallObject : calculateCost(smsRatePerSegment)
+    activate SmsCallObject
+    SmsCallObject --> Service : calculatedCost
+    deactivate SmsCallObject
+
+    Service -> Repository : save(smsCallObject)
+    activate Repository
+
+        Repository -> DB : INSERT INTO sms_calls \n (mapped_sms_call_data)
+        activate DB
+        DB --> Repository : kaydetme başarılı
+        deactivate DB
+
+    Repository --> Service : kayıt başarılı
+    deactivate Repository
+
+Service --> Controller : İşlem Başarılı (200 OK)
+deactivate Service
+
+Controller --> ExternalSystem : HTTP 200 OK
+deactivate Controller
+
+@enduml

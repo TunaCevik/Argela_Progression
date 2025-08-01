@@ -1,0 +1,38 @@
+@startuml CDR_Filtering_Sequence
+autonumber
+actor "Admin/Rapor Kullanıcısı" as User
+participant "Web UI / API Gateway" as UI
+participant "CDR Controller" as Controller
+participant "CDR Query Service" as QueryService
+participant "CDR Repository" as Repository
+database "Database" as DB
+
+User -> UI : "CDR Sorgula" butonu \n (filtre: başlangıç tarihi, bitiş tarihi, aNumber vb.)
+
+activate UI
+UI -> Controller : HTTP GET /api/v1/cdr/calls?startDate=...&endDate=...&aNumber=...
+activate Controller
+
+Controller -> QueryService : getFilteredCdrRecords(filterCriteria)
+activate QueryService
+
+    QueryService -> Repository : findByFilterCriteria(filterCriteria)
+    activate Repository
+
+        Repository -> DB : SELECT * FROM calls \n WHERE start_time BETWEEN ? AND ? AND a_number = ?
+        activate DB
+        DB --> Repository : matching_cdr_records (List of Call/PhoneCall/SmsCall objects)
+        deactivate DB
+
+    Repository --> QueryService : filteredCdrList
+    deactivate Repository
+
+QueryService --> Controller : filteredCdrList
+deactivate QueryService
+
+Controller --> UI : HTTP 200 OK \n (JSON Filtered CDR Records)
+deactivate Controller
+
+UI --> User : Filtrelenmiş kayıtları tabloda göster
+
+@enduml

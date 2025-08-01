@@ -1,0 +1,60 @@
+@startuml CDR_class_diagram
+abstract class Call {
+    -Date startTime
+    -String imsi
+    -String imei
+    -Integer cellId
+    -Integer lacId
+    -String aNumber
+    -String bNumber
+    -Enum direction 
+    -Enum result   
+    +Call(startTime: Date, imsi: String, imei: String, cellId: Integer, lacId: Integer, aNumber: String, bNumber: String, direction: String, result: String)
+    +{abstract} String getType()
+    +{abstract} Long getTotalDuration()
+    +{abstract} double calculateCost()
+}
+
+Call <|-- PhoneCall : extends
+Call <|-- SmsCall : extends
+
+class PhoneCall {
+    -Date endTime
+    -Long setupDuration
+    -Long conversationDuration
+    +PhoneCall(startTime: Date, imsi: String, imei: String, cellId: Integer, lacId: Integer, aNumber: String, bNumber: String, direction: String, result: String, endTime: Date, setupDuration: Long, conversationDuration: Long)
+    +String getType()
+    +Long getTotalDuration()
+    +double calculateCost()
+}
+
+class SmsCall {
+    -Integer messageLength 
+    +SmsCall(startTime: Date, imsi: String, imei: String, cellId: Integer, lacId: Integer, aNumber: String, bNumber: String, direction: String, result: String, messageLength: Integer)
+    +String getType()
+    +Long getTotalDuration()
+    +double calculateCost()
+}
+
+interface ICallRate {
+    +double getRate()
+}
+
+ICallRate <|.. SMSCallRatePlan : implements
+ICallRate <|.. VoiceCallRatePlan : implements
+
+class SMSCallRatePlan {
+    -double ratePerSegment
+    +SMSCallRatePlan(ratePerSegment: double)
+    +double getRate()
+}
+
+class VoiceCallRatePlan {
+    -double ratePerSecond
+    +VoiceCallRatePlan(ratePerSecond: double)
+    +double getRate()
+}
+
+PhoneCall ..> VoiceCallRatePlan : "uses"
+SmsCall ..> SMSCallRatePlan : "uses"
+@enduml

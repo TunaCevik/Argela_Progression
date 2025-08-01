@@ -1,0 +1,47 @@
+@startuml PhoneCallProcessing
+autonumber
+actor "Harici Sistem" as ExternalSystem
+participant "CDR Controller" as Controller
+participant "CDR Service" as Service
+participant "PhoneCall" as PhoneCallObject
+participant "VoiceCallRatePlan" as VoiceRate
+participant "CDR Repository" as Repository
+database "Database" as DB
+
+ExternalSystem -> Controller : HTTP POST /api/v1/cdr/phonecalls \n (JSON Telefon Çağrısı Verisi)
+activate Controller
+
+Controller -> Service : processPhoneCall(jsonData)
+activate Service
+
+    Service -> PhoneCallObject : <<create>> PhoneCall(commonData, phoneCallSpecificData)
+    activate PhoneCallObject
+    deactivate PhoneCallObject
+
+    Service -> VoiceRate : getRate()
+    activate VoiceRate
+    VoiceRate --> Service : voiceRatePerSecond
+    deactivate VoiceRate
+    Service -> PhoneCallObject : calculateCost(voiceRatePerSecond)
+    activate PhoneCallObject
+    PhoneCallObject --> Service : calculatedCost
+    deactivate PhoneCallObject
+
+    Service -> Repository : save(phoneCallObject)
+    activate Repository
+
+        Repository -> DB : INSERT INTO phone_calls \n (mapped_phone_call_data)
+        activate DB
+        DB --> Repository : kaydetme başarılı
+        deactivate DB
+
+    Repository --> Service : kayıt başarılı
+    deactivate Repository
+
+Service --> Controller : İşlem Başarılı (200 OK)
+deactivate Service
+
+Controller --> ExternalSystem : HTTP 200 OK
+deactivate Controller
+
+@enduml
