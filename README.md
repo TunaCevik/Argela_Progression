@@ -1,3 +1,7 @@
+**💻 Proje Kod Tabanı:**
+
+Bu dokümantasyonda anlatılan CDR İşleme Servisi'nin çekirdek kod tabanına [CDR-Processing-Service](https://github.com/TunaCevik/CDR-Processing-Service) reposundan ulaşabilirsiniz.
+
 # CDR (Call Detail Record) İşleme Sistemi
 
 ## 🚀 Proje Hakkında
